@@ -10,7 +10,9 @@ end
 
 local split = "right"
 local num = 0
-
+--todo: move towards detection based on file extension rather
+--then filetype which could be faulty, ie: .h files could be
+--c or c++
 local supportedfiletypes = {
     ["c"] = true,
     ["cpp"] = true,
@@ -19,7 +21,7 @@ local supportedfiletypes = {
 
 local filetypetocompiler = {
     ["c"] = "cc -xc",
-    ["cpp"] = "c++ -xc",
+    ["cpp"] = "c++ -xc++",
     ["cxx"] = "c++ -xc++",
 }
 
@@ -33,6 +35,7 @@ local function compile()
     end
     
     --find compile_commands.json
+    --todo: investigate alternative detection methods
     local build = io.open("./compile_commands.json", "r") 
     if not build then return nil end
     local c = json.decode(build:read("*a"))
@@ -53,6 +56,8 @@ local function compile()
         ::continue::
     end
 
+    --make format flags language dependent
+    --todo: test with other compiled languages, zig, fortran, etc.
     command = string.format("%s -S -fverbose-asm -w %s -o a.s", command, filepath)
     os.execute(command)
 
@@ -97,6 +102,14 @@ local function setsplit(sp)
         split = sp
     end
 end
+
+--todo: add options for full file asm or single function
+
+--todo: interface with treesitter to provide more
+--contextual options
+
+--todo: add floating window option for single line or single
+--function compilation
 
 local function setup()
     vim.api.nvim_create_user_command('CVrun', create_buffer, {})
