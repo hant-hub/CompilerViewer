@@ -11,9 +11,6 @@ end
 local split = "right"
 local buf = nil
 
-local function fileToDir()
-end
-
 local function compile()
     local filepath = vim.api.nvim_buf_get_name(0)
     --print(string.sub(string.reverse(filepath), 0, 2))
@@ -77,10 +74,6 @@ local function setsplit(sp)
     return function()
         split = sp
     end
-end
-
-local function destroyBuffer()
-    vim.api.nvim
 end
 
 local function setup()
