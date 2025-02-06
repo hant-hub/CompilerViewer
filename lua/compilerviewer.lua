@@ -9,7 +9,7 @@ local function main()
 end
 
 local split = "right"
-local buf = vim.api.nvim_create_buf(true, true)
+local buf = nil
 
 local function fileToDir()
 end
@@ -58,6 +58,11 @@ local function compile()
 end
 
 local function create_buffer()
+    if not buf then
+        buf = vim.api.nvim_create_buf(true, true)
+        vim.api.nvim_buf_set_name(buf, "CViewer")
+        vim.api.nvim_set_option_value("filetype", "asm",{buf = buf})
+    end
     local text = compile()
     vim.api.nvim_buf_set_lines(buf, 0, -1, true, text)
     vim.api.nvim_open_win(buf, false, {
@@ -74,11 +79,11 @@ local function setsplit(sp)
     end
 end
 
+local function destroyBuffer()
+    vim.api.nvim
+end
+
 local function setup()
-
-    vim.api.nvim_buf_set_name(buf, "CViewer")
-    vim.api.nvim_set_option_value("filetype", "asm",{buf = buf})
-
     vim.api.nvim_create_user_command('CVrun', create_buffer, {})
     vim.api.nvim_create_user_command('CVright', setsplit("right"), {})
     vim.api.nvim_create_user_command('CVleft', setsplit("left"), {})
