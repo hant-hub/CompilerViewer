@@ -9,20 +9,35 @@ local function main()
 end
 
 local split = "right"
-local buf = nil
+local num = 0
+
+local supportedfiletypes = {
+    ["c"] = true,
+    ["cpp"] = true,
+    ["cxx"] = true,
+}
+
+local filetypetocompiler = {
+    ["c"] = "cc -xc",
+    ["cpp"] = "c++ -xc",
+    ["cxx"] = "c++ -xc++",
+}
+
 
 local function compile()
     local filepath = vim.api.nvim_buf_get_name(0)
     --print(string.sub(string.reverse(filepath), 0, 2))
-    if string.sub(string.reverse(filepath), 0, 2) ~= "c." then
-        return
+    print(vim.bo.filetype)
+    if not supportedfiletypes[vim.bo.filetype] then
+        return nil
     end
     
     --find compile_commands.json
     local build = io.open("./compile_commands.json", "r") 
+    if not build then return nil end
     local c = json.decode(build:read("*a"))
 
-    local command = "clang"
+    local command = filetypetocompiler[vim.bo.filetype]
     for key, val in pairs(c[1].arguments) do
         if val == "-c" then
            goto continue 
@@ -38,12 +53,14 @@ local function compile()
         ::continue::
     end
 
-    command = string.format("%s -S -w -c %s -o a.s", command, filepath)
+    command = string.format("%s -S -fverbose-asm -w %s -o a.s", command, filepath)
     os.execute(command)
 
     local asm = io.lines("./a.s")
     local lines = {}
     for line in asm do
+        --todo: additional processing for lines
+        --todo: optional removal of all but the asm for a function
         table.insert(lines, line)
     end
 
@@ -55,18 +72,23 @@ local function compile()
 end
 
 local function create_buffer()
-    if not buf then
-        buf = vim.api.nvim_create_buf(true, true)
-        vim.api.nvim_buf_set_name(buf, "CViewer")
-        vim.api.nvim_set_option_value("filetype", "asm",{buf = buf})
-    end
+    local buf = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_name(buf, string.format("CV%d", num))
+    num = num + 1
+
+    vim.api.nvim_set_option_value("filetype", "asm",{buf = buf})
     local text = compile()
+    if not text then
+        return
+    end
+    --if not vim.api.win_find_buf(buf) then
+        vim.api.nvim_open_win(buf, false, {
+            split = split,
+            win = 0
+        })
+    --end
     vim.api.nvim_buf_set_lines(buf, 0, -1, true, text)
-    vim.api.nvim_open_win(buf, false, {
-        split = split,
-        win = 0
-    })
-    return buf
+    return
 end
 
 
